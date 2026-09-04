@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -145,6 +146,22 @@ func TestRunStdinAppendsToPrompt(t *testing.T) {
 	}
 	if !strings.Contains(user, "summarize this") || !strings.Contains(user, "piped context") {
 		t.Fatalf("user message should combine the arg prompt and stdin, got %q", user)
+	}
+}
+
+func TestRunFallbackModels(t *testing.T) {
+	var reqs []llm.Request
+	runFixture(t, "ok", &reqs)
+
+	if _, err := runCapture(t, "", "-fallback-models", "fallback-a, fallback-b", "go"); err != nil {
+		t.Fatal(err)
+	}
+	if len(reqs) != 1 {
+		t.Fatalf("requests: %d", len(reqs))
+	}
+	want := []string{"fallback-a", "fallback-b"}
+	if !slices.Equal(reqs[0].FallbackModels, want) {
+		t.Fatalf("fallback models: got %v, want %v", reqs[0].FallbackModels, want)
 	}
 }
 

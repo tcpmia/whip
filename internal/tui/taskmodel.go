@@ -30,7 +30,7 @@ func SubModelFor(cfg *config.Config, model, provider string) (agent.SubModel, er
 	}
 	cli := llm.New(prov.BaseURL, key)
 	cli.MaxRetries = cfg.MaxRetries
-	return agent.SubModel{Client: cli, Model: apiID, ContextLimit: mdl.ContextWindow(), MaxTokens: mdl.MaxOut}, nil
+	return agent.SubModel{Client: cli, Model: apiID, FallbackModels: cfg.FallbackModels, ContextLimit: mdl.ContextWindow(), MaxTokens: mdl.MaxOut}, nil
 }
 
 // TaskDefaultFor resolves the default subagent route: cfg.taskModel when set

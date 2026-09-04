@@ -276,6 +276,17 @@ func TestReasoningEffortSerialized(t *testing.T) {
 	}
 }
 
+func TestFallbackModelsSerializedInOrder(t *testing.T) {
+	b, _ := json.Marshal(Request{Model: "primary", FallbackModels: []string{"fallback-a", "fallback-b"}})
+	if !strings.Contains(string(b), `"model":"primary"`) || !strings.Contains(string(b), `"models":["fallback-a","fallback-b"]`) {
+		t.Fatalf("missing ordered fallback models: %s", b)
+	}
+	b, _ = json.Marshal(Request{Model: "primary"})
+	if strings.Contains(string(b), `"models"`) {
+		t.Fatalf("unset fallback models must be omitted: %s", b)
+	}
+}
+
 func TestSamplingParamsSerialized(t *testing.T) {
 	temp, topP := 0.2, 0.9
 	b, _ := json.Marshal(Request{Model: "m", Temperature: &temp, TopP: &topP})

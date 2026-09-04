@@ -19,11 +19,12 @@ func subagentPrompt() string {
 // SubModel is a resolved subagent route: which client/model a subagent runs
 // on. The zero value means "unset" (fall through to the next default).
 type SubModel struct {
-	Client       *llm.Client
-	Model        string // model id sent to the API
-	ContextLimit int    // provider-advertised context window (0 = unknown)
-	MaxTokens    int    // output cap (0 = inherit the parent's)
-	Effort       string // reasoning-effort override ("" = inherit the parent's)
+	Client         *llm.Client
+	Model          string   // model id sent to the API
+	FallbackModels []string // OpenRouter model ids tried after Model, in order
+	ContextLimit   int      // provider-advertised context window (0 = unknown)
+	MaxTokens      int      // output cap (0 = inherit the parent's)
+	Effort         string   // reasoning-effort override ("" = inherit the parent's)
 }
 
 // newSub builds a fresh subagent. Route precedence: the explicit override o
@@ -37,7 +38,7 @@ func (a *Agent) newSub(o SubModel) *Agent {
 		o = a.TaskDefault
 	}
 	if o.Client == nil {
-		o = SubModel{Client: a.Client, Model: a.Model, ContextLimit: a.ContextLimit}
+		o = SubModel{Client: a.Client, Model: a.Model, FallbackModels: a.FallbackModels, ContextLimit: a.ContextLimit}
 	}
 	if o.MaxTokens == 0 {
 		o.MaxTokens = a.MaxTokens
@@ -49,6 +50,7 @@ func (a *Agent) newSub(o SubModel) *Agent {
 	c := *o.Client
 	o.Client = &c
 	sub := New(o.Client, o.Model, o.MaxTokens, subagentPrompt())
+	sub.FallbackModels = o.FallbackModels
 	// A per-task effort override wins; otherwise inherit the parent's effort.
 	if effort != "" {
 		sub.Effort = effort

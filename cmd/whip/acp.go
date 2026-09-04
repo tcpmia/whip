@@ -120,6 +120,7 @@ func acpCLI(args []string) error {
 		client.MaxRetries = cfg.MaxRetries
 		ag := agent.New(client, apiID, maxOut, systemPrompt(wd, time.Now()))
 		ag.ModelName, ag.Provider = modelName, provName
+		ag.FallbackModels = cfg.FallbackModels
 		ag.ComputerDisabled = true
 		ag.ContextLimit = ctxLimit
 		// Reasoning effort: explicit cfg.DefaultEffort wins; "" resolves
