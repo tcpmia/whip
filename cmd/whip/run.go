@@ -55,6 +55,7 @@ func runCLI(args []string) error {
 	format := fs.String("format", "text", "output format: text (stream the reply) or json (newline-delimited event stream)")
 	modelFlag := fs.String("m", "", "model name from ~/.whip/config.json (default: defaultModel)")
 	providerFlag := fs.String("p", "", "provider to route the model through (default: model's first provider)")
+	fallbackModelsFlag := fs.String("fallback-models", "", "comma-separated OpenRouter model ids to try in order after the primary model fails (default: fallbackModels from config)")
 	resumeFlag := fs.String("resume", "", "continue this session id (see `whip sessions`) instead of starting fresh")
 	systemFlag := fs.String("system", "", "override the system prompt for this run")
 	systemFileFlag := fs.String("system-file", "", "read the system prompt from this file (wins over -system)")
@@ -64,7 +65,7 @@ func runCLI(args []string) error {
 	noSessionFlag := fs.Bool("no-session", false, "run without persisting a session (one-off jobs don't clutter whip sessions)")
 	cacheKeyFlag := fs.String("cache-key", "", "prompt_cache_key for provider prefix caching; defaults to the session id, else a per-run key. Pass a STABLE value (e.g. repo/reviewer) to reuse the cached system prefix across runs.")
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: whip run [--format text|json] [-m model] [-p provider] [-resume id] [-system text | -system-file path] [-max-turns N] [-timeout dur] [-quiet] [-no-session] \"prompt\"")
+		fmt.Fprintln(os.Stderr, "usage: whip run [--format text|json] [-m model] [-p provider] [-fallback-models model,...] [-resume id] [-system text | -system-file path] [-max-turns N] [-timeout dur] [-quiet] [-no-session] \"prompt\"")
 		fs.PrintDefaults()
 	}
 	if err := fs.Parse(args); err != nil {
@@ -137,6 +138,18 @@ func runCLI(args []string) error {
 
 	ag := agent.New(client, apiID, mdl.MaxTokens, sys)
 	ag.ModelName, ag.Provider = modelName, provName
+	ag.FallbackModels = cfg.FallbackModels
+	if *fallbackModelsFlag != "" {
+		ag.FallbackModels = nil
+		for fallback := range strings.SplitSeq(*fallbackModelsFlag, ",") {
+			if fallback = strings.TrimSpace(fallback); fallback != "" {
+				ag.FallbackModels = append(ag.FallbackModels, fallback)
+			}
+		}
+		if len(ag.FallbackModels) == 0 {
+			return errors.New("-fallback-models must contain at least one model id")
+		}
+	}
 	// Headless runs have no one to answer a consent prompt: computer_exec
 	// stays disabled (no interactive approver is ever installed).
 	ag.ComputerDisabled = true

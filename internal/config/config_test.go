@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -149,6 +150,31 @@ func TestLoadJSONCCommentsAndTrailingCommas(t *testing.T) {
 	}
 	if cfg.Models["m1"].Providers[0] != "a" || cfg.Models["m1"].MaxTokens != 1024 {
 		t.Fatalf("model: %+v", cfg.Models["m1"])
+	}
+}
+
+func TestLoadFallbackModelsPreservesOrder(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	if err := os.MkdirAll(filepath.Join(home, ".whip"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	src := `{
+  "defaultModel": "primary",
+  "fallbackModels": ["fallback-a", "fallback-b"],
+  "providers": {"openrouter": {"baseUrl": "https://openrouter.ai/api/v1", "api": "openai-completions"}},
+  "models": {"primary": {"providers": ["openrouter"]}}
+}`
+	if err := os.WriteFile(filepath.Join(home, ".whip", "config.json"), []byte(src), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"fallback-a", "fallback-b"}
+	if !slices.Equal(cfg.FallbackModels, want) {
+		t.Fatalf("fallback models: got %v, want %v", cfg.FallbackModels, want)
 	}
 }
 

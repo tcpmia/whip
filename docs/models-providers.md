@@ -104,6 +104,23 @@ Per-model overrides still compose: add an entry under `"models"` in
 config.json (with `"providers": ["openrouter"]`) to pin context, maxOut,
 vision, or sampling params for a specific id.
 
+To let OpenRouter fail over to other models, set their ids in priority order:
+
+```json
+{
+  "defaultModel": "openai/gpt-5",
+  "fallbackModels": [
+    "anthropic/claude-sonnet-4.5",
+    "google/gemini-2.5-pro"
+  ]
+}
+```
+
+Whip keeps `model` as the primary request field and emits this list as
+OpenRouter's `models` field. OpenRouter advances through the list only when the
+primary or an earlier fallback returns an eligible model/provider error. For a
+single headless run, `-fallback-models id1,id2` overrides the configured list.
+
 ## Token bookkeeping
 
 Three numbers with distinct meanings:

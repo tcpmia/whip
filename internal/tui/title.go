@@ -29,8 +29,10 @@ func (m *model) maybeTitle() tea.Cmd {
 	}
 	m.titled = true // one attempt per session, win or lose
 	cli, mdl := m.agent.CompactClient, m.agent.CompactModel
+	fallbackModels := []string(nil)
 	if cli == nil {
 		cli = m.agent.Client
+		fallbackModels = m.agent.FallbackModels
 	}
 	if cli == nil {
 		return nil // headless tests build agents without a client
@@ -57,8 +59,9 @@ func (m *model) maybeTitle() tea.Cmd {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 		out, _, err := cli.Complete(ctx, llm.Request{
-			Model:     mdl,
-			MaxTokens: 24,
+			Model:          mdl,
+			FallbackModels: fallbackModels,
+			MaxTokens:      24,
 			Messages: []llm.Message{
 				{Role: "system", Content: "You name chat sessions. Reply with a short title (3-6 words, plain text, no quotes, no trailing period) summarizing the user's request."},
 				{Role: "user", Content: "Request: " + truncLine(userTxt, 300) + "\nResponse: " + truncLine(asstTxt, 200)},

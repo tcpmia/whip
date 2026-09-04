@@ -200,6 +200,7 @@ func (m *model) switchToForked(id string) {
 	} else {
 		m.agent = agent.New(m.agent.Client, m.agent.Model, m.agent.MaxTokens, m.sysPrompt)
 		m.agent.ModelName, m.agent.Provider = m.modelName, m.provName
+		m.agent.FallbackModels = m.cfg.FallbackModels
 		m.agent.ContextLimit = m.contextLimitFor(m.provName, m.agent.Model)
 	}
 	m.applyCompactModel()

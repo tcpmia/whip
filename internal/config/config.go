@@ -163,21 +163,22 @@ const DefaultCompactPct = 50
 
 // Config is the root of ~/.whip/config.json (JSONC: comments allowed).
 type Config struct {
-	DefaultModel    string `json:"defaultModel"`
-	DefaultProvider string `json:"defaultProvider,omitempty"` // override the model's first provider
-	DefaultEffort   string `json:"defaultEffort,omitempty"`   // reasoning effort for new sessions: "" defaults to "low"; "off", "low", "medium", "high"
-	CompactModel    string `json:"compactModel,omitempty"`    // model for compaction summaries; "" = the built-in default
-	CompactProvider string `json:"compactProvider,omitempty"` // provider for the compaction model; "" = the model's default routing
-	CompactPct      int    `json:"compactPct,omitempty"`      // compact at this % of the context window; 0 = DefaultCompactPct
-	TaskModel       string `json:"taskModel,omitempty"`       // model subagents (the task tool) run on; "" = the built-in default
-	TaskProvider    string `json:"taskProvider,omitempty"`    // provider for the subagent model; "" = the model's default routing
-	Theme           string `json:"theme,omitempty"`           // "light", "dark", or "" (auto-detect at startup)
-	UIMode          string `json:"uiMode,omitempty"`          // "" (default whip look) or "opencode" (reproduces opencode's TUI palette/glyphs/logo)
-	Sidebar         *bool  `json:"sidebar,omitempty"`         // opencode-mode sidebar; nil = shown when the terminal is ≥120 cols, false = hidden at startup (ctrl+x b still toggles)
-	Mouse           *bool  `json:"mouse,omitempty"`           // false disables capture so native terminal selection works
-	Thinking        *bool  `json:"thinking,omitempty"`        // nil defaults to on; false hides reasoning tokens (ctrl+o)
-	CollapsePaste   *bool  `json:"collapsePaste,omitempty"`   // nil/false: pastes land verbatim; true collapses ≥3-line pastes into a [Pasted ~N lines] placeholder
-	GoalMaxRounds   int    `json:"goalMaxRounds,omitempty"`   // global goal-loop round cap; 0 = DefaultGoalMaxRounds; projects.json may override per folder
+	DefaultModel    string   `json:"defaultModel"`
+	DefaultProvider string   `json:"defaultProvider,omitempty"` // override the model's first provider
+	DefaultEffort   string   `json:"defaultEffort,omitempty"`   // reasoning effort for new sessions: "" defaults to "low"; "off", "low", "medium", "high"
+	FallbackModels  []string `json:"fallbackModels,omitempty"`  // OpenRouter model ids tried in order after the primary model fails
+	CompactModel    string   `json:"compactModel,omitempty"`    // model for compaction summaries; "" = the built-in default
+	CompactProvider string   `json:"compactProvider,omitempty"` // provider for the compaction model; "" = the model's default routing
+	CompactPct      int      `json:"compactPct,omitempty"`      // compact at this % of the context window; 0 = DefaultCompactPct
+	TaskModel       string   `json:"taskModel,omitempty"`       // model subagents (the task tool) run on; "" = the built-in default
+	TaskProvider    string   `json:"taskProvider,omitempty"`    // provider for the subagent model; "" = the model's default routing
+	Theme           string   `json:"theme,omitempty"`           // "light", "dark", or "" (auto-detect at startup)
+	UIMode          string   `json:"uiMode,omitempty"`          // "" (default whip look) or "opencode" (reproduces opencode's TUI palette/glyphs/logo)
+	Sidebar         *bool    `json:"sidebar,omitempty"`         // opencode-mode sidebar; nil = shown when the terminal is ≥120 cols, false = hidden at startup (ctrl+x b still toggles)
+	Mouse           *bool    `json:"mouse,omitempty"`           // false disables capture so native terminal selection works
+	Thinking        *bool    `json:"thinking,omitempty"`        // nil defaults to on; false hides reasoning tokens (ctrl+o)
+	CollapsePaste   *bool    `json:"collapsePaste,omitempty"`   // nil/false: pastes land verbatim; true collapses ≥3-line pastes into a [Pasted ~N lines] placeholder
+	GoalMaxRounds   int      `json:"goalMaxRounds,omitempty"`   // global goal-loop round cap; 0 = DefaultGoalMaxRounds; projects.json may override per folder
 	// WorktreeSubagents defaults background subagents to run in their own git
 	// worktree so their file edits stay isolated from the parent's tree and
 	// from each other. The subagent tool's per-call `worktree` arg overrides this.

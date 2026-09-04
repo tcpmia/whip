@@ -400,6 +400,7 @@ func New(baseURL, apiKey string) *Client {
 // Request is a chat completions request.
 type Request struct {
 	Model           string    `json:"model"`
+	FallbackModels  []string  `json:"models,omitempty"`
 	Messages        []Message `json:"messages"`
 	Tools           []Tool    `json:"tools,omitempty"`
 	MaxTokens       int       `json:"max_tokens,omitempty"`

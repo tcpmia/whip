@@ -912,6 +912,7 @@ func (m *model) resume(id string) error {
 	} else {
 		m.agent = agent.New(m.agent.Client, m.agent.Model, m.agent.MaxTokens, m.sysPrompt)
 		m.agent.ModelName, m.agent.Provider = m.modelName, m.provName
+		m.agent.FallbackModels = m.cfg.FallbackModels
 		m.agent.ContextLimit = m.contextLimitFor(m.provName, m.agent.Model)
 	}
 	m.applyCompactModel()
@@ -1237,6 +1238,7 @@ func buildAgent(cfg *config.Config, modelName, provName, sysPrompt string) (*age
 	client.MaxRetries = cfg.MaxRetries
 	ag := agent.New(client, apiID, maxOut, sysPrompt)
 	ag.ModelName, ag.Provider = modelName, provName
+	ag.FallbackModels = cfg.FallbackModels
 	ag.ContextLimit = ctxLimit
 	ag.WorktreeSubagents = cfg.WorktreeSubagents != nil && *cfg.WorktreeSubagents
 	if sp := mdl.SamplingParams; sp != nil {
@@ -4527,9 +4529,10 @@ func (m *model) command(text string) (tea.Model, tea.Cmd) {
 		prompt := agent.BuildGoalFromContextPrompt(tail)
 		formulate := func() (string, error) {
 			goal, usage, err := ag.Client.Complete(ctx, llm.Request{
-				Model:     ag.Model,
-				MaxTokens: 8192,
-				Messages:  []llm.Message{{Role: "user", Content: prompt}},
+				Model:          ag.Model,
+				FallbackModels: ag.FallbackModels,
+				MaxTokens:      8192,
+				Messages:       []llm.Message{{Role: "user", Content: prompt}},
 			})
 			ag.AddUsage(usage) // the formulation call is session spend too
 			return goal, err

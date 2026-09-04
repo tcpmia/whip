@@ -71,12 +71,15 @@ func (a *Agent) SetOnTodos(fn func(items []Todo)) {
 
 // Agent holds one conversation.
 type Agent struct {
-	Client    *llm.Client
-	Model     string // model id sent to the API
-	ModelName string // config model name (may differ from Model via id mapping)
-	Provider  string // config provider name
-	MaxTokens int
-	Effort    string // reasoning effort: "" = parameter omitted from requests
+	Client *llm.Client
+	Model  string // model id sent to the API
+	// FallbackModels are OpenRouter model ids tried in order when Model fails.
+	// Empty preserves the standard singular-model request.
+	FallbackModels []string
+	ModelName      string // config model name (may differ from Model via id mapping)
+	Provider       string // config provider name
+	MaxTokens      int
+	Effort         string // reasoning effort: "" = parameter omitted from requests
 	// Temperature/TopP are optional per-model sampling knobs for outbound
 	// requests. nil omits the field, preserving provider defaults.
 	Temperature *float64
@@ -552,6 +555,7 @@ func (a *Agent) turn(ctx context.Context, input string, parts []llm.ContentPart,
 		a.Client.OnRetry = ev.OnRetry
 		msg, usage, err := a.Client.Stream(ctx, llm.Request{
 			Model:           a.Model,
+			FallbackModels:  a.FallbackModels,
 			Messages:        msgs,
 			Tools:           tools.Defs(a.AllTools()),
 			ReasoningEffort: a.Effort,
@@ -1015,9 +1019,14 @@ func (a *Agent) compact(ctx context.Context) (summary string, cutoff int, info C
 			label = mdl + " @ " + u.Host
 		}
 	}
+	fallbackModels := a.FallbackModels
+	if dedicated {
+		fallbackModels = nil
+	}
 	sum, usage, cerr := cli.Complete(ctx, llm.Request{
-		Model:     mdl,
-		MaxTokens: 4096, // room for a real state digest; 1024 clipped multi-hour sessions
+		Model:          mdl,
+		FallbackModels: fallbackModels,
+		MaxTokens:      4096, // room for a real state digest; 1024 clipped multi-hour sessions
 		Messages: []llm.Message{
 			sysPrompt,
 			{Role: "user", Content: summaryPrompt},
@@ -1175,6 +1184,7 @@ func (a *Agent) finalAnswer(ctx context.Context, ev Events) (string, error) {
 	a.Client.OnRetry = ev.OnRetry
 	msg, usage, err := a.Client.Stream(ctx, llm.Request{
 		Model:           a.Model,
+		FallbackModels:  a.FallbackModels,
 		Messages:        msgs,
 		Tools:           nil, // no tools — force a text answer
 		ReasoningEffort: a.Effort,
